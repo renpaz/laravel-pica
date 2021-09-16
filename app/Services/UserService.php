@@ -17,6 +17,12 @@ class UserService
     {
     }
 
+    /**
+     * Creates a new user
+     *
+     * @param mixed $data
+     * @return User
+     */
     public function create($data)
     {
         $user = new User();
@@ -26,6 +32,13 @@ class UserService
         return $user;
     }
 
+    /**
+     * Updates user
+     *
+     * @param mixed $data
+     * @param User $user
+     * @return User
+     */
     public function update($data, $user)
     {
         $this->fill($user, $data->toArray());
@@ -34,11 +47,26 @@ class UserService
         return $user;
     }
 
+    /**
+     * Deletes user and all of its dependencies
+     *
+     * @param mixed $data
+     * @return array
+     */
     public function multiDelete($data)
     {
-        return User::destroy($data);
+        return [
+            User::destroy($data)
+        ];
     }
 
+    /**
+     * Fill all user data and must be updated after every new migration related to users
+     *
+     * @param User $model
+     * @param mixed $data
+     * @return void
+     */
     public function fill(&$model, $data)
     {
         $model->name = $data['name'];
@@ -52,24 +80,17 @@ class UserService
         $users = User::select();
         $filters = $request->get('search');
 
-        // $this->filterByUser($users);
-
         if (isset($filters))
             $this->applyFilters($users, $filters);
 
         return $users;
     }
 
-    private function applyFilters(&$contacts, $filters)
+    private function applyFilters(&$users, $filters)
     {
         if ($filters) {
-            $contacts->whereRaw(DB::raw(StringFormat::rawTextFilter($filters, 'name')));
+            $users->whereRaw(DB::raw(StringFormat::rawTextFilter($filters, 'name')));
         }
-        return $contacts;
+        return $users;
     }
-
-    // public function filterByUser(&$users)
-    // {
-
-    // }
 }

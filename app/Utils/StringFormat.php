@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\DB;
 
 class StringFormat
 {
-    public static function removerAcentos($string)
+    public static function accentRemoval($string)
     {
         $replace = array(
             'ъ' => '-', 'Ь' => '-', 'Ъ' => '-', 'ь' => '-',
@@ -70,11 +70,17 @@ class StringFormat
 
     public static function slugfy($str)
     {
-        $acentosRemovidos = self::removerAcentos($str);
-        $substituirEspacos = str_replace(' ', '_', $acentosRemovidos);
-        return strtolower($substituirEspacos);
+        $removedAccents = self::accentRemoval($str);
+        $replaceSpaces = str_replace(' ', '_', $removedAccents);
+        return strtolower($replaceSpaces);
     }
 
+    /**
+     * Clears the document to remove any special characters that the user may have typed
+     *
+     * @param mixed $cnpj
+     * @return string
+     */
     public static function clearDocument($cnpj)
     {
         return str_replace(['/', '.', '-'], '', $cnpj);
@@ -82,33 +88,33 @@ class StringFormat
 
     public static function mask($val, $mask)
     {
-        $maskared = '';
+        $masked = '';
         $k = 0;
         for ($i = 0; $i <= strlen($mask) - 1; $i++) {
             if ($mask[$i] == '#') {
-                if (isset($val[$k])) $maskared .= $val[$k++];
+                if (isset($val[$k])) $masked .= $val[$k++];
             } else {
-                if (isset($mask[$i])) $maskared .= $mask[$i];
+                if (isset($mask[$i])) $masked .= $mask[$i];
             }
         }
-        return $maskared;
+        return $masked;
     }
 
     public static function maskWithValueLength($val, $mask)
     {
-        $maskared = '';
+        $masked = '';
         $k = 0;
 
         for ($i = 0; $i < strlen($mask); $i++) {
             if ($mask[$i] == '#') {
-                if (!isset($val[$k])) return $maskared;
-                $maskared .= $val[$k++];
+                if (!isset($val[$k])) return $masked;
+                $masked .= $val[$k++];
             } else {
-                if (isset($mask[$i])) $maskared .= $mask[$i];
+                if (isset($mask[$i])) $masked .= $mask[$i];
             }
         }
 
-        return $maskared;
+        return $masked;
     }
 
     public static function maskCNPJ($cnpj)
@@ -128,14 +134,10 @@ class StringFormat
      */
     public static function rawTextFilter($value, string $column): string
     {
-        $valueNotAccents = self::removerAcentos($value);
+        $valueNotAccents = self::accentRemoval($value);
         $valueRaw = '\'%' . strtoupper($valueNotAccents) . '%\'';
 
-        // if (env('DB_CONNECTION') === 'oracle') {
-        // $columnRaw = DB::raw('UPPER(CAST(TRANSLATE(' . $column . ',\'âàãáÁÂÀÃéêÉÊíÍóôõÓÔÕüúÜÚÇç\',\'AAAAAAAAEEEEIIOOOOOOUUUUCC\') AS varchar(255)))');
-        // } else {
         $columnRaw = DB::raw("UPPER(REPLACE($column, 'ŠšŽžÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸÞàáâãäåæçèéêëìíîïñòóôõöøùúûüýÿþƒ', 'SsZzAAAAAAACEEEEIIIINOOOOOOUUUUYYBaaaaaaaceeeeiiiinoooooouuuuyybf'))");
-        // }
 
         return $columnRaw . ' LIKE ' . $valueRaw;
     }
